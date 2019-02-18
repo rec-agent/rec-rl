@@ -4,7 +4,7 @@ Each line in the data file represents a returned page of the request launched by
 
 Each line contains 15 columns. The meaning of each column is as fololows:
 
-column 1: The page id of the current request, which ranges from 0 to 11.  Note that for each page, we return 50 items to the user.
+column 1: The id of returned page for the current request, which ranges from 0 to 11.  Note that for each page, we return 50 items to the user.
 column 2: The hour when the request is launched by the user.
 
 column 3-11: The item-sepcific features/labels. We concat the values of 50 returned items belonging to a request toghether to form a list and separat them by comma.  
