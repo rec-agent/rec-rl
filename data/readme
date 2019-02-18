@@ -17,3 +17,4 @@ column 11: The concatednated list of **an optinal powerful feature** of the item
 column 12: To indicate whether the current page is the last page browsed by the user. 
 column 13-15: The profile features of the user which includes age-level, gender and the level of purchase power.
 
+So column 1-6,11,13-15 can be used to generate **state** vector in the paper. Column 7-10 can be used to calclulated the **reward** in the paper. Column 12 represents the **terminal** indicator of RL in the paper.
