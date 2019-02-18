@@ -1,3 +1,19 @@
 The file can be downloaded at: https://drive.google.com/file/d/14OtIC8eiDkzoWCTtaUZHcb7eB-bUmtTT/view?usp=sharing
 
-Each line in the data file represents a request from the user.
+Each line in the data file represents a returned page of the request launched by the user. 
+
+Each line contains 15 columns. The meaning of each column is as fololows:
+
+column 1: The page id of the current request, which ranges from 0 to 11.  Note that for each page, we return 50 items to the user.
+column 2: The hour when the request is launched by the user.
+
+column 3-11: The item-sepcific features/labels. We concat the values of 50 returned items belonging to a request toghether to form a list and separat them by comma.  
+More specifically, 
+column 3: The concatenated list of **position** for each item in the returned list, which ranges from 0 to 49.
+column 4-6: The concatenated list of **predicted ctr/cvr/price** for each item in the returned list.
+column 7-10: The concatednated list of **isclcik/iscart/isfav/ispurchase** for each item in the return list to indicate whether the item is cliked/added to cart/added to whishlist/purchased by the user.
+column 11: The concatednated list of **an optinal powerful feature** of the item which can be used as one dimension of the "state" vector in RL.
+
+column 12: To indicate whether the current page is the last page browsed by the user. 
+column 13-15: The profile features of the user which includes age-level, gender and the level of purchase power.
+
