@@ -1,20 +1,36 @@
+## source file
 The file can be downloaded at: https://drive.google.com/file/d/14OtIC8eiDkzoWCTtaUZHcb7eB-bUmtTT/view?usp=sharing
 
-Each line in the data file represents a returned page of the request launched by the user. 
+## background (Please refer to the paper for more details. https://arxiv.org/pdf/1902.00851.pdf)
+The following is one short paragraph from the paper which can help to understand the format of the datafile. 
+-----
+In our recommendation platform, items are shown in cascade
+on a mobile App one by one. Each time the user initiates a request,
+50 items are recommended to him/her. As user scrolls down the
+list and have seen all 50 items, a new request is triggered. is
+process is repeated until the user leaves the App or return the top
+of the cascade, labelled as ”exit” in Figure 2. We use a metric called
+”pageid” to distinguish diferent requests in this interaction, similar
+to the concept of ”page” to a search engine. As the user and the
+system interact with each other, the system learns how to respond
+to the state to obtain an optimized accumulative reward.
+-----
 
+## dataformat
 Each line contains 15 columns. The meaning of each column is as fololows:
 
 column 1: The id of returned page for the current request, which ranges from 0 to 11.  Note that for each page, we return 50 items to the user.
 column 2: The hour when the request is launched by the user.
-
-column 3-11: The item-sepcific features/labels. We concat the values of 50 returned items belonging to a request toghether to form a list and separat them by comma.  
+column 3-5: The features used to profile the user which includes age-level, gender and the level of purchase power.
+column 6-14: The item-sepcific features/labels. We concat the values of 50 returned items belonging to a request toghether to form a list and separat them by comma.  
 More specifically, 
-column 3: The concatenated list of **position** for each item in the returned list, which ranges from 0 to 49.
-column 4-6: The concatenated list of **predicted ctr/cvr/price** for each item in the returned list.
-column 7-10: The concatednated list of **isclcik/iscart/isfav/ispurchase** for each item in the return list to indicate whether the item is cliked/added to cart/added to whishlist/purchased by the user.
-column 11: The concatednated list of **an optinal powerful feature** of the item which can be used as one dimension of the "state" vector in RL.
+column 6: The concatenated list of **position** for each item in the returned list, which ranges from 0 to 600 (12pages * 50items/page).
+column 7-9: The concatenated list of **predicted ctr/cvr/price** for each item in the returned list.
+column 10-12: The concatednated list of **isclcik/iscart/isfav** for each item in the returned list to indicate whether the item is cliked/added to cart/added to whishlist by the user.
+column 13: The concatednated list of **purchase amount** for each item in the returned list. For example, 0.0 means that the user does not purchase this item. 12.0 means that the user spends 12 Yuan on this item.
+column 14: The concatednated list of **an optinal powerful feature** of the item which can be used as one dimension of the "state" vector in RL.
 
-column 12: To indicate whether the current page is the last page browsed by the user. 
-column 13-15: The features used to profile the user which includes age-level, gender and the level of purchase power.
+column 15: To indicate whether the current page is the last page browsed by the user. 
 
-So column 1-6,11,13-15 can be used to generate **state** in the paper. Column 7-10 can be used to calclulate the **reward** in the paper. Column 12 represents the **terminal** indicator of RL in the paper.
+
+So column 1-9,14 can be used to generate **state** in the paper. Column 10-13 can be used to calclulate the **reward** in the paper. Column 15 represents the **terminal** indicator of RL in the paper.
