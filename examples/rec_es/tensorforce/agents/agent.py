@@ -137,6 +137,8 @@ class Agent(object):
     def close(self):
         self.model.close()
 
+
+    #被子类重写
     def initialize_model(self):
         """
         Creates the model for the respective agent based on specifications given by user. This is a separate
@@ -286,5 +288,6 @@ class Agent(object):
             predefined_objects=tensorforce.agents.agents,
             kwargs=kwargs
         )
+        #isinstance会考虑继承关系
         assert isinstance(agent, Agent)
         return agent
