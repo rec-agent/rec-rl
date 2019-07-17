@@ -31,6 +31,7 @@ class RecTableEnv(MetaEnvironment):
         self._version = '0.1'
 
         self.sess = None
+
     def __str__(self):
         return 'RecTableEnv({})'.format(self._version)
 
@@ -40,7 +41,7 @@ class RecTableEnv(MetaEnvironment):
         """
         print('env config:', self.env_conf)
 
-        # get worker_num and worker_id
+        # get worker_num and worker_id, if not has key, then set default value as 1 and 0 in get()
         self.worker_num = self.env_conf.get('worker_num', 1)
         self.worker_id = self.env_conf.get('worker_id', 0)
 
@@ -66,9 +67,11 @@ class RecTableEnv(MetaEnvironment):
         ranking_formula_type 3: (a * ctr + b * cvr + ctr * cvr^c * price^d) * matchtype_weight
         ranking_formula_type 4: (a * ctr + b * ctr * cvr + ctr * cvr^c * price^d) * matchtype_weight
         '''
+        #默认ranking function的type是0
         self.ranking_formula_type = self.env_conf.get('ranking_formula_type', 0)
         self.feature_include_hour_power = self.env_conf.get('feature_include_hour_power', False)
         self.feature_include_age_gender = self.env_conf.get('feature_include_age_gender', False)
+
 
         self.states_spec = {}
         feature_dim = self.max_pageid + 1
@@ -81,6 +84,7 @@ class RecTableEnv(MetaEnvironment):
             'type': 'float',
             'shape': (feature_dim,)
         }
+
         self.actions_spec = {}
         if self.ranking_formula_type == 0:
             action_shape = 2
@@ -95,6 +99,7 @@ class RecTableEnv(MetaEnvironment):
 
         self.actions_spec['action'] = {
             'type': 'float',
+            #因为默认ranking function是type0，因此只需要两个action
             'shape': (action_shape,),
             'min_value': -1.0,
             'max_value': 2.0
@@ -104,8 +109,10 @@ class RecTableEnv(MetaEnvironment):
         print('actions:', self.actions)
 
     def set_up(self):
+        #local_mode从json文件中读取，且默认为True
         if self.local_mode:
             print('load data in local mode')
+            #读取数据，并赋给batch data
             self.batch_data = input_fn_local(
                 name='table_env',
                 tables=self.tables,
@@ -249,8 +256,12 @@ class RecTableEnv(MetaEnvironment):
         self.pv_discount_pay = tf.reduce_sum(discounted_pay, 1)
         self.pv_discount_pay_mean = tf.reduce_mean(self.pv_discount_pay, 0)
 
+        #clip_by_value可以将一个张量中的数值限制在一个范围之内,此处是[0，7],cache_data包含一个batch的数据，所以大小是batch_size
         pageid = tf.clip_by_value(self.cache_data['pageid'], 0, self.max_pageid)
+        # print(self.cache_data['pageid'])
+        # print(pageid)
         self.pageid_onehot = tf.one_hot(pageid, depth=self.max_pageid + 1, dtype=tf.float32)
+        # print(self.pageid_onehot)
         feature_list = [self.pageid_onehot]
         if self.feature_include_hour_power:
             self.hour_onehot = tf.one_hot(hour, depth=24, dtype=tf.float32)
@@ -270,6 +281,8 @@ class RecTableEnv(MetaEnvironment):
 
         print('build graph done')
 
+
+    #返回走一步之后的下一个状态，是否终止，以及reward
     def execute(self, actions):
         """
         Interact with the environment
@@ -308,7 +321,7 @@ class RecTableEnv(MetaEnvironment):
 
 if __name__ == '__main__':
     import json
-    with open('rec_config_local.json', 'r') as fp:
+    with open('rec_config_local.json', 'rb') as fp:
         config = json.load(fp=fp)
     print('config:', config)
     action_val = tf.constant(np.array([[1,1,1], [1,1,1], [1,0.83,0.83], [1,0.67,0.67], [1,0.5,0.5], [1,0.33,0.33], [1,0.17,0.17], [1,0.0,0.0]], dtype=np.float32))
@@ -319,24 +332,29 @@ if __name__ == '__main__':
     env.set_session(sess)
     env.set_up()
     cur_action = tf.matmul(env.pageid_onehot, action_val)
-    sess.run(tf.global_variables_initializer())
-    sess.run(tf.local_variables_initializer())
-    coord = tf.train.Coordinator()
-    threads = tf.train.start_queue_runners(coord=coord, sess=sess)
-    try:
-        for i in range(4):
-            print('pageid_onehot:', sess.run([env.reset()]))
-            print('pageid cached:', sess.run(env.cache_data['pageid']))
-            print('pageid cached again:', sess.run(env.cache_data['pageid']))
-            cur_action_val = sess.run(cur_action)
-            print('cur_action:', cur_action_val)
-            #print('cur_action again:', sess.run(cur_action))
-            next_state, terminal, reward = env.execute(cur_action_val)
-            print('reward:', reward)
 
-    except tf.errors.OutOfRangeError:
-        print('data is out of range')
-    finally:
-        coord.request_stop()
-        coord.join(threads)
-    sess.close()
+    ###print(env.pageid_onehot) (100,8) 因为batchsize = 100
+    ###print(action_val) (8,3)
+    ###print(cur_action) (100,3)
+
+    # sess.run(tf.global_variables_initializer())
+    # sess.run(tf.local_variables_initializer())
+    # coord = tf.train.Coordinator()
+    # threads = tf.train.start_queue_runners(coord=coord, sess=sess)
+    # try:
+    #     for i in range(4):
+    #         print('pageid_onehot:', sess.run([env.reset()]))
+    #         print('pageid cached:', sess.run(env.cache_data['pageid']))
+    #         print('pageid cached again:', sess.run(env.cache_data['pageid']))
+    #         cur_action_val = sess.run(cur_action)
+    #         print('cur_action:', cur_action_val)
+    #         #print('cur_action again:', sess.run(cur_action))
+    #         next_state, terminal, reward = env.execute(cur_action_val)
+    #         print('reward:', reward)
+
+    # except tf.errors.OutOfRangeError:
+    #     print('data is out of range')
+    # finally:
+    #     coord.request_stop()
+    #     coord.join(threads)
+    # sess.close()
