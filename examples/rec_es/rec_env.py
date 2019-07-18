@@ -209,7 +209,8 @@ class RecTableEnv(MetaEnvironment):
         self.assign_cache_ops = {}
         for tensor_name in self.cache_data.keys():
             self.assign_cache_ops[tensor_name] = tf.assign(self.cache_data[tensor_name], self.batch_data[tensor_name], name=tensor_name + 'assign_cache')
-
+        # print('!!!!!!!')
+        # print(self.assign_cache_ops)
         ctr = self.cache_data['ctr']
         cvr = self.cache_data['cvr']
         price = self.cache_data['price']
@@ -217,6 +218,8 @@ class RecTableEnv(MetaEnvironment):
         pay = self.cache_data['pay']
 
         self.actions_input = tf.placeholder(tf.float32, shape=None, name='env_action')
+        # print('!!!!!!!')
+        # print(self.actions_input)
 
         offset = 0
         if self.ranking_formula_type in (2, 3, 4):
@@ -226,9 +229,12 @@ class RecTableEnv(MetaEnvironment):
             cvr_weight = tf.reshape(self.actions_input[:,offset], (-1,1))
             offset += 1
         cvr_power = tf.reshape(self.actions_input[:,offset], (-1,1))
+        # print('!!!!!!!')
+        # print(cvr_power)
         price_power = tf.reshape(self.actions_input[:,1 + offset], (-1,1))
+        # print(price_power)
 
-        rank_score = ctr * tf.pow(cvr, cvr_power) * tf.pow(price, price_power)
+        rank_score = ctr * tf.pow(cvr,cvr_power) * tf.pow(price,price_power)                                                                                                                                                   
         if self.ranking_formula_type == 2:
             rank_score = rank_score + ctr * ctr_weight
         elif self.ranking_formula_type == 3:
@@ -261,8 +267,11 @@ class RecTableEnv(MetaEnvironment):
         # print(self.cache_data['pageid'])
         # print(pageid)
         self.pageid_onehot = tf.one_hot(pageid, depth=self.max_pageid + 1, dtype=tf.float32)
-        # print(self.pageid_onehot)
+        # print('!!!!!!!')
+        # print(self.pageid_onehot.eval())
         feature_list = [self.pageid_onehot]
+
+        # print(feature_list)
         if self.feature_include_hour_power:
             self.hour_onehot = tf.one_hot(hour, depth=24, dtype=tf.float32)
             self.power_onehot = tf.one_hot(power, depth=8, dtype=tf.float32)
@@ -337,24 +346,24 @@ if __name__ == '__main__':
     ###print(action_val) (8,3)
     ###print(cur_action) (100,3)
 
-    # sess.run(tf.global_variables_initializer())
-    # sess.run(tf.local_variables_initializer())
-    # coord = tf.train.Coordinator()
-    # threads = tf.train.start_queue_runners(coord=coord, sess=sess)
-    # try:
-    #     for i in range(4):
-    #         print('pageid_onehot:', sess.run([env.reset()]))
-    #         print('pageid cached:', sess.run(env.cache_data['pageid']))
-    #         print('pageid cached again:', sess.run(env.cache_data['pageid']))
-    #         cur_action_val = sess.run(cur_action)
-    #         print('cur_action:', cur_action_val)
-    #         #print('cur_action again:', sess.run(cur_action))
-    #         next_state, terminal, reward = env.execute(cur_action_val)
-    #         print('reward:', reward)
+    sess.run(tf.global_variables_initializer())
+    sess.run(tf.local_variables_initializer())
+    coord = tf.train.Coordinator()
+    threads = tf.train.start_queue_runners(coord=coord, sess=sess)
+    try:
+        for i in range(4):
+            print('pageid_onehot:', sess.run([env.reset()]))
+            print('pageid cached:', sess.run(env.cache_data['pageid']))
+            print('pageid cached again:', sess.run(env.cache_data['pageid']))
+            cur_action_val = sess.run(cur_action)
+            print('cur_action:', cur_action_val)
+            #print('cur_action again:', sess.run(cur_action))
+            next_state, terminal, reward = env.execute(cur_action_val)
+            print('reward:', reward)
 
-    # except tf.errors.OutOfRangeError:
-    #     print('data is out of range')
-    # finally:
-    #     coord.request_stop()
-    #     coord.join(threads)
-    # sess.close()
+    except tf.errors.OutOfRangeError:
+        print('data is out of range')
+    finally:
+        coord.request_stop()
+        coord.join(threads)
+    sess.close()

@@ -302,7 +302,7 @@ class DeterministicESModel(Model):
         internals = []
         unique_state = len(self.states_spec) == 1
         unique_action = len(self.actions_spec) == 1
-
+        
         for i in range(self.repeat_actions):
             reward_sum = 0.0
             states = self.env.reset()
@@ -317,6 +317,7 @@ class DeterministicESModel(Model):
                     states, terminal, reward = self.env.execute(next(iter(actions.values())))
                 else:
                     states, terminal, reward = self.env.execute(actions)
+
                 reward_sum += reward
                 step += 1
                 if terminal or (self.max_episode_timesteps is not None and step >= self.max_episode_timesteps):
@@ -347,6 +348,8 @@ class DeterministicESModel(Model):
 
         self.set_weights(params + perturbation)
         rewards_pos, lengths_pos = self.rollout(deterministic=True)
+        # print('!!!!!!')
+        # print(rewards_pos)
 
         self.set_weights(params - perturbation)
         rewards_neg, lengths_neg = self.rollout(deterministic=True)
@@ -467,12 +470,16 @@ class DeterministicESModel(Model):
 
         # debug
         self.weights = self.network.layers[0].weights
+        # print('!!!!!!!')
+        # print(self.weights)
 
         episodes_so_far = 0
         timesteps_so_far = 0
         tstart = time.time()
         sync_time = 0.0
         theta = self.get_weights()
+        # print('!!!!!!!!')
+        # print(theta)
         for iters_so_far in range(self.train_iters):
 
             step_tstart = time.time()
