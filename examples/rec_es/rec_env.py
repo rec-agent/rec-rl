@@ -4,6 +4,12 @@ from __future__ import division
 
 import tensorflow as tf
 import numpy as np
+
+import os
+import sys
+path = os.path.abspath('../../')
+sys.path.append(path)
+
 from tensorforce.environments.meta_environment import MetaEnvironment
 import tensorforce.util as utl
 from tensorforce.exception import TensorforceError
@@ -121,6 +127,13 @@ class RecTableEnv(MetaEnvironment):
                 worker_id=self.worker_id,
                 batch_size=self.batch_size
             )
+            # print('!!!!!!')
+            # print(self.tables)
+            # print(self.epoch)
+            # print(self.worker_num)
+            # print(self.worker_id)
+            # print(self.batch_size)
+            # print(self.batch_data)
             self.device = ("/job:localhost/replica:0/task:%d" % self.worker_id) if self.worker_id != -1 else 0
         else:
             self.batch_data = input_fn_local(
@@ -133,6 +146,11 @@ class RecTableEnv(MetaEnvironment):
                 capacity=self.capacity
             )
             self.device = ("/job:worker/task:%d" % self.worker_id) if self.worker_id != -1 else 0
+        # print('!!!!!!')
+        # print(self.batch_data['ctr'])
+        # with tf.Session() as sess:
+            # sess.run(self.batch_data['ctr'].initializer)
+            # print((self.batch_data['ctr']).eval())
         with tf.variable_scope(name_or_scope='table_env') as scope:
             with tf.device(device_name_or_function = self.device):
                 self.build_graph()
@@ -212,6 +230,10 @@ class RecTableEnv(MetaEnvironment):
         # print('!!!!!!!')
         # print(self.assign_cache_ops)
         ctr = self.cache_data['ctr']
+        # print('!!!!!!')
+        # with tf.Session() as sess:
+        #     sess.run(ctr.initializer)
+        #     print(ctr.eval())
         cvr = self.cache_data['cvr']
         price = self.cache_data['price']
         click = self.cache_data['click']
@@ -335,7 +357,7 @@ if __name__ == '__main__':
     print('config:', config)
     action_val = tf.constant(np.array([[1,1,1], [1,1,1], [1,0.83,0.83], [1,0.67,0.67], [1,0.5,0.5], [1,0.33,0.33], [1,0.17,0.17], [1,0.0,0.0]], dtype=np.float32))
     env = RecTableEnv(config)
-    sess_config = tf.ConfigProto(allow_soft_placement=True,log_device_placement=True)
+    sess_config = tf.ConfigProto(allow_soft_placement=True,log_device_placement=False)
     sess_config.gpu_options.allow_growth = True
     sess = tf.Session(config=sess_config)
     env.set_session(sess)
@@ -351,15 +373,15 @@ if __name__ == '__main__':
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(coord=coord, sess=sess)
     try:
-        for i in range(4):
-            print('pageid_onehot:', sess.run([env.reset()]))
-            print('pageid cached:', sess.run(env.cache_data['pageid']))
-            print('pageid cached again:', sess.run(env.cache_data['pageid']))
-            cur_action_val = sess.run(cur_action)
-            print('cur_action:', cur_action_val)
-            #print('cur_action again:', sess.run(cur_action))
-            next_state, terminal, reward = env.execute(cur_action_val)
-            print('reward:', reward)
+    for i in range(4):
+        print('pageid_onehot:', sess.run([env.reset()]))
+        print('pageid cached:', sess.run(env.cache_data['pageid']))
+        print('pageid cached again:', sess.run(env.cache_data['pageid']))
+        cur_action_val = sess.run(cur_action)
+        print('cur_action:', cur_action_val)
+        #print('cur_action again:', sess.run(cur_action))
+        next_state, terminal, reward = env.execute(cur_action_val)
+        print('reward:', reward)
 
     except tf.errors.OutOfRangeError:
         print('data is out of range')

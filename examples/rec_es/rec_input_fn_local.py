@@ -5,8 +5,11 @@ import time
 
 def _parse_dense_features(s, dshape, dtype=tf.float32, delimiter=','):
     record_defaults = [[0.0]] * dshape[1]
+    #过decode_csv输出一个list of tensors，长度为50，每个item是一个float32类型的batch data
     value = tf.decode_csv(s, record_defaults=record_defaults, field_delim=delimiter)
+    #stack将list里的tensor拼接成一个tensor
     value = tf.stack(value, axis=1)
+    #进行数据类型转换
     value = tf.cast(value, dtype)
     return tf.reshape(value, dshape)
 
@@ -30,21 +33,31 @@ def input_fn(name="input", tables="", num_epochs=None, num_workers=1, worker_id=
                 capacity=10 * batch_size,
                 enqueue_many=True,
                 num_threads=1)
+            # print(batch_keys)
+            # print(batch_values)
+
             record_defaults = [['']] * 4 + [[-1]] + [['']] * 9
+            #将一行或多行数据读入，按‘;’进行分割，然后赋值为一个list of tensors，长度符合数据格式的列
+            #record_defaults设定了每一列tensor的type，此处为前四个tensor为string，第五个为int32，六到十四继续是string
             data = tf.decode_csv(batch_values, record_defaults=record_defaults, field_delim=';')
+            # print(data)
 
-            pageid = data[4]
-            ctr = data[7]
-            cvr = data[8]
-            price = data[9]
-            isclick = data[10]
-            pay = data[11]
-
-            ctr = _parse_dense_features(ctr, (-1, 50))
-            cvr = _parse_dense_features(cvr, (-1, 50))
-            price = _parse_dense_features(price, (-1, 50))
-            isclick = _parse_dense_features(isclick, (-1, 50))
-            pay = _parse_dense_features(pay, (-1, 50))
+            #按列赋值给page_id,ctr,cvr等等
+            pageid = data[4] #type: int32
+            ctr = data[7] #type: string
+            cvr = data[8] #type: string
+            price = data[9] #type: string
+            isclick = data[10] #type: string
+            pay = data[11] #type: string
+            # print(ctr)
+            
+            #ctr,cvr等实际上是string，里面每行包含了50个item，需要通过_parse_dense_features转成float形式
+            ctr = _parse_dense_features(ctr, (-1, 50)) #batch_size x 50
+            # cvr = _parse_dense_features(cvr, (-1, 50))
+            # price = _parse_dense_features(price, (-1, 50))
+            # isclick = _parse_dense_features(isclick, (-1, 50))
+            # pay = _parse_dense_features(pay, (-1, 50))
+            # print(ctr)
 
             batch_data = {'keys': batch_keys,
                         'pageid': pageid,
@@ -54,3 +67,22 @@ def input_fn(name="input", tables="", num_epochs=None, num_workers=1, worker_id=
                         'click': isclick,
                         'pay': pay}
     return batch_data
+
+
+if __name__ == '__main__':
+    # test_fn()
+    batch_data = input_fn(
+                name='table_env',
+                tables=['examples/rec_es/rec_rl_data_small'],
+                num_epochs=None,
+                num_workers=1,
+                worker_id=0,
+                capacity=10000,
+                batch_size=100
+                
+            )
+    # with tf.Session() as sess:
+    #     sess.run(batch_data)
+    # print(batch_data)
+    # with tf.Session() as sess:
+    #     print(sess.run(batch_data['ctr']))

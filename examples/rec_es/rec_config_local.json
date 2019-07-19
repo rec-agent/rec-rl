@@ -16,7 +16,7 @@
         "l2_coeff": 0.005,
         "eval_prob": 0.5,
         "noise_stddev": 0.02,
-        "train_iters": 2
+        "train_iters": 1
     },
     "network_spec": [
         {
