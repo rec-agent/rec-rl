@@ -81,8 +81,10 @@ if __name__ == '__main__':
                 batch_size=100
                 
             )
+    # ctr = batch_data['ctr']
     # with tf.Session() as sess:
-    #     sess.run(batch_data)
+    #     sess.run(ctr)
+    #     print(ctr.eval())
     # print(batch_data)
     # with tf.Session() as sess:
     #     print(sess.run(batch_data['ctr']))
