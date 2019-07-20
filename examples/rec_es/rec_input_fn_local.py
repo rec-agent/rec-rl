@@ -70,7 +70,6 @@ def input_fn(name="input", tables="", num_epochs=None, num_workers=1, worker_id=
 
 
 if __name__ == '__main__':
-    # test_fn()
     batch_data = input_fn(
                 name='table_env',
                 tables=['examples/rec_es/rec_rl_data_small'],
