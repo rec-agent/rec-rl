@@ -53,10 +53,10 @@ def input_fn(name="input", tables="", num_epochs=None, num_workers=1, worker_id=
             
             #ctr,cvr等实际上是string，里面每行包含了50个item，需要通过_parse_dense_features转成float形式
             ctr = _parse_dense_features(ctr, (-1, 50)) #batch_size x 50
-            # cvr = _parse_dense_features(cvr, (-1, 50))
-            # price = _parse_dense_features(price, (-1, 50))
-            # isclick = _parse_dense_features(isclick, (-1, 50))
-            # pay = _parse_dense_features(pay, (-1, 50))
+            cvr = _parse_dense_features(cvr, (-1, 50))
+            price = _parse_dense_features(price, (-1, 50))
+            isclick = _parse_dense_features(isclick, (-1, 50))
+            pay = _parse_dense_features(pay, (-1, 50))
             # print(ctr)
 
             batch_data = {'keys': batch_keys,

@@ -373,15 +373,15 @@ if __name__ == '__main__':
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(coord=coord, sess=sess)
     try:
-    for i in range(4):
-        print('pageid_onehot:', sess.run([env.reset()]))
-        print('pageid cached:', sess.run(env.cache_data['pageid']))
-        print('pageid cached again:', sess.run(env.cache_data['pageid']))
-        cur_action_val = sess.run(cur_action)
-        print('cur_action:', cur_action_val)
-        #print('cur_action again:', sess.run(cur_action))
-        next_state, terminal, reward = env.execute(cur_action_val)
-        print('reward:', reward)
+        for i in range(4):
+            print('pageid_onehot:', sess.run([env.reset()]))
+            print('pageid cached:', sess.run(env.cache_data['pageid']))
+            print('pageid cached again:', sess.run(env.cache_data['pageid']))
+            cur_action_val = sess.run(cur_action)
+            print('cur_action:', cur_action_val)
+            #print('cur_action again:', sess.run(cur_action))
+            next_state, terminal, reward = env.execute(cur_action_val)
+            print('reward:', reward)
 
     except tf.errors.OutOfRangeError:
         print('data is out of range')
