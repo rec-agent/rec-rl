@@ -29,6 +29,7 @@ class RecTableEnv(MetaEnvironment):
     '''
     def __init__(self, config):
         config['env_type'] = 'odps_table'
+        #read config from json, load 'env' into RecTableEnv
         super(RecTableEnv, self).__init__(config)
 
         # parse more config
@@ -51,11 +52,10 @@ class RecTableEnv(MetaEnvironment):
         self.worker_num = self.env_conf.get('worker_num', 1)
         self.worker_id = self.env_conf.get('worker_id', 0)
 
-        # get table name
+        # get table name 获取数据集地址
         if 'tables' not in self.env_conf:
             raise TensorforceError("Can't find tables in configuration")
         self.tables = self.env_conf['tables']
-
         self.epoch = self.env_conf.get('epoch', None)
         self.batch_size = self.env_conf.get('batch_size', 100)
         self.capacity = self.env_conf.get('capacity', 4 * self.batch_size)
@@ -66,6 +66,7 @@ class RecTableEnv(MetaEnvironment):
         self.reward_shaping_method = self.env_conf.get('reward_shaping_method', None)
         self.alipay_threshold = self.env_conf.get('alipay_threshold', 0.0)
         self.alipay_penalty = self.env_conf.get('alipay_penalty', 0.0)
+
         '''
         ranking_formula_type 0: ctr * cvr^a * price^b
         ranking_formula_type 1: (ctr * cvr^a * price^b) * matchtype_weight
@@ -80,6 +81,7 @@ class RecTableEnv(MetaEnvironment):
 
 
         self.states_spec = {}
+        #设置当前state的feature为pageid，做完one-hot后，维度为8
         feature_dim = self.max_pageid + 1
         if self.feature_include_hour_power:
             feature_dim += 32
@@ -173,6 +175,8 @@ class RecTableEnv(MetaEnvironment):
             raise TensorforceError("self.session is None")
 
         self.sess.run([self.batch_data, self.assign_cache_ops])
+        # print('!!!!!!!!')
+        # print((self.batch_data['ctr']).eval(session=self.sess))
 
     def reset(self):
         self.update()
@@ -181,9 +185,27 @@ class RecTableEnv(MetaEnvironment):
 
     def build_graph(self):
         self.cache_data = {}
+
         self.cache_data['pageid'] = tf.Variable(tf.zeros(self.batch_size, dtype=tf.int32),
                                                 trainable=False,
                                                 name='pageid_var')
+        self.cache_data['ctr'] = tf.Variable(tf.zeros([self.batch_size, 50], dtype=tf.float32),
+                                             trainable=False,
+                                             name='ctr_var')
+        self.cache_data['cvr'] = tf.Variable(tf.zeros([self.batch_size, 50], dtype=tf.float32),
+                                             trainable=False,
+                                             name='cvr_var')
+        self.cache_data['price'] = tf.Variable(tf.zeros([self.batch_size, 50], dtype=tf.float32),
+                                               trainable=False,
+                                               name='price_var')
+        self.cache_data['click'] = tf.Variable(tf.zeros([self.batch_size, 50], dtype=tf.float32),
+                                               trainable=False,
+                                               name='click_var')
+        self.cache_data['pay'] = tf.Variable(tf.zeros([self.batch_size, 50], dtype=tf.float32),
+                                             trainable=False,
+                                             name='pay_var')
+
+
         if self.feature_include_hour_power:
             self.cache_data['hour'] = tf.Variable(tf.zeros(self.batch_size, dtype=tf.int32),
                                                     trainable=False,
@@ -203,21 +225,7 @@ class RecTableEnv(MetaEnvironment):
             age = self.cache_data['age']
             gender = self.cache_data['gender']
 
-        self.cache_data['ctr'] = tf.Variable(tf.zeros([self.batch_size, 50], dtype=tf.float32),
-                                             trainable=False,
-                                             name='ctr_var')
-        self.cache_data['cvr'] = tf.Variable(tf.zeros([self.batch_size, 50], dtype=tf.float32),
-                                             trainable=False,
-                                             name='cvr_var')
-        self.cache_data['price'] = tf.Variable(tf.zeros([self.batch_size, 50], dtype=tf.float32),
-                                               trainable=False,
-                                               name='price_var')
-        self.cache_data['click'] = tf.Variable(tf.zeros([self.batch_size, 50], dtype=tf.float32),
-                                               trainable=False,
-                                               name='click_var')
-        self.cache_data['pay'] = tf.Variable(tf.zeros([self.batch_size, 50], dtype=tf.float32),
-                                             trainable=False,
-                                             name='pay_var')
+        
         if self.ranking_formula_type in (1, 2, 3, 4):
             self.cache_data['matchtype'] = tf.Variable(tf.zeros([self.batch_size, 50], dtype=tf.int32),
                                                  trainable=False,
@@ -229,11 +237,8 @@ class RecTableEnv(MetaEnvironment):
             self.assign_cache_ops[tensor_name] = tf.assign(self.cache_data[tensor_name], self.batch_data[tensor_name], name=tensor_name + 'assign_cache')
         # print('!!!!!!!')
         # print(self.assign_cache_ops)
+        
         ctr = self.cache_data['ctr']
-        # print('!!!!!!')
-        # with tf.Session() as sess:
-        #     sess.run(ctr.initializer)
-        #     print(ctr.eval())
         cvr = self.cache_data['cvr']
         price = self.cache_data['price']
         click = self.cache_data['click']
@@ -250,6 +255,7 @@ class RecTableEnv(MetaEnvironment):
         if self.ranking_formula_type in (3, 4):
             cvr_weight = tf.reshape(self.actions_input[:,offset], (-1,1))
             offset += 1
+
         cvr_power = tf.reshape(self.actions_input[:,offset], (-1,1))
         # print('!!!!!!!')
         # print(cvr_power)
@@ -352,7 +358,7 @@ class RecTableEnv(MetaEnvironment):
 
 if __name__ == '__main__':
     import json
-    with open('rec_config_local.json', 'rb') as fp:
+    with open('rec_env_config_local.json', 'rb') as fp:
         config = json.load(fp=fp)
     print('config:', config)
     action_val = tf.constant(np.array([[1,1,1], [1,1,1], [1,0.83,0.83], [1,0.67,0.67], [1,0.5,0.5], [1,0.33,0.33], [1,0.17,0.17], [1,0.0,0.0]], dtype=np.float32))
@@ -373,19 +379,20 @@ if __name__ == '__main__':
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(coord=coord, sess=sess)
     try:
-    for i in range(4):
-        print('pageid_onehot:', sess.run([env.reset()]))
-        print('pageid cached:', sess.run(env.cache_data['pageid']))
-        print('pageid cached again:', sess.run(env.cache_data['pageid']))
-        cur_action_val = sess.run(cur_action)
-        print('cur_action:', cur_action_val)
-        #print('cur_action again:', sess.run(cur_action))
-        next_state, terminal, reward = env.execute(cur_action_val)
-        print('reward:', reward)
+        for i in range(4):
+            print('pageid_onehot:', sess.run([env.reset()]))
+            print('pageid cached:', sess.run(env.cache_data['pageid']))
+            print('pageid cached again:', sess.run(env.cache_data['pageid']))
+            cur_action_val = sess.run(cur_action)
+            print('cur_action:', cur_action_val)
+            #print('cur_action again:', sess.run(cur_action))
+            next_state, terminal, reward = env.execute(cur_action_val)
+            print('next state:', next_state)
+            print('reward:', reward)
 
     except tf.errors.OutOfRangeError:
         print('data is out of range')
     finally:
         coord.request_stop()
-        coord.join(threads)
+    coord.join(threads)
     sess.close()
