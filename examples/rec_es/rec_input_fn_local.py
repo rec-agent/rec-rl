@@ -66,14 +66,23 @@ def input_fn(name="input", tables="", num_epochs=None, num_workers=1, worker_id=
             pay = _parse_dense_features(pay, (-1, 50))
             # print(ctr)
 
+            batch_data = {'keys': batch_keys,
+                        'pageid': pageid,
+                        'ctr': ctr,
+                        'cvr': cvr,
+                        'price': price,
+                        'click': isclick,
+                        'pay': pay}
+
     return batch_data
 
 
 if __name__ == '__main__':
+    tables = [["padded_pv_1k.data"],["rec_rl_data_small"]]
     batch_data = input_fn(
                 name='table_env',
                 # tables=['rec_rl_data_small'],
-                tables=['padded_pv_1k.data'],
+                tables=tables,
                 #num_epochs：一个整数（可选）。
                 #如果指定，string_input_producer在产生OutOfRange错误之前从string_tensor中产生num_epochs次字符串。
                 #如果未指定，则可以无限次循环遍历字符串。
