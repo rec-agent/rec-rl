@@ -13,6 +13,16 @@ def _parse_dense_features(s, dshape, dtype=tf.float32, delimiter=','):
     value = tf.cast(value, dtype)
     return tf.reshape(value, dshape)
 
+def _parse_dense_int_features(s, dshape, dtype=tf.int32, delimiter=','):
+    record_defaults = [[0.0]] * dshape[1]
+    #过decode_csv输出一个list of tensors，长度为50，每个item是一个float32类型的batch data
+    value = tf.decode_csv(s, record_defaults=record_defaults, field_delim=delimiter)
+    #stack将list里的tensor拼接成一个tensor
+    value = tf.stack(value, axis=1)
+    #进行数据类型转换
+    value = tf.cast(value, dtype)
+    return tf.reshape(value, dshape)
+
 def _invert_permutation(input, row_count):
     '''wrapper for matrix'''
     rows = []
@@ -24,7 +34,7 @@ def _invert_permutation(input, row_count):
 def input_fn(name="input", tables="", num_epochs=None, num_workers=1, worker_id=0, capacity=0, batch_size=64):
     with tf.variable_scope(name_or_scope=name, reuse=False) as scope:
         with tf.device(device_name_or_function = ("/job:localhost/replica:0/task:%d"%worker_id) if worker_id != -1 else None):
-            filename_queue = tf.train.string_input_producer(tables[0], num_epochs=num_epochs,shuffle=False)
+            filename_queue = tf.train.string_input_producer(tables, num_epochs=num_epochs,shuffle=False)
             reader = tf.TextLineReader()
             keys, values = reader.read_up_to(filename_queue, batch_size)
             batch_keys, batch_values = tf.train.batch(
@@ -50,7 +60,9 @@ def input_fn(name="input", tables="", num_epochs=None, num_workers=1, worker_id=
             # price = data[9] #type: string
             # isclick = data[10] #type: string
             # pay = data[11] #type: string
-            
+            c = np.random.random([10,1]) 
+            # pageid = tf.nn.embedding_lookup(c, data[2])  
+
             pageid = data[2] #type: int32
             ctr = data[8] #type: string
             cvr = data[9] #type: string
@@ -62,7 +74,10 @@ def input_fn(name="input", tables="", num_epochs=None, num_workers=1, worker_id=
             ctr = _parse_dense_features(ctr, (-1, 50)) #batch_size x 50
             cvr = _parse_dense_features(cvr, (-1, 50))
             price = _parse_dense_features(price, (-1, 50))
-            isclick = _parse_dense_features(isclick, (-1, 50))
+            # isclick = _parse_dense_int_features(isclick, (-1, 50))
+            # isclick = _parse_dense_features(isclick, (-1, 50))
+            isclick = tf.cast(tf.nn.embedding_lookup(c, _parse_dense_int_features(isclick, (-1, 50))),tf.float32)
+            isclick = tf.reshape(isclick,(-1,50))
             pay = _parse_dense_features(pay, (-1, 50))
             # print(ctr)
 
@@ -78,7 +93,7 @@ def input_fn(name="input", tables="", num_epochs=None, num_workers=1, worker_id=
 
 
 if __name__ == '__main__':
-    tables = [["padded_pv_1k.data"],["rec_rl_data_small"]]
+    tables = ["padded_pv_1k.data"]
     batch_data = input_fn(
                 name='table_env',
                 # tables=['rec_rl_data_small'],
@@ -104,8 +119,8 @@ if __name__ == '__main__':
         try:
             while not coord.should_stop():
                 sess.run(batch_data)
-                # print(batch_data['ctr'].eval())
-                print(batch_data['ctr'].shape)
+                # print(batch_data['click'].eval())
+                print(batch_data['click'].shape)
         #当文件队列读到末尾的时候，抛出异常
         except tf.errors.OutOfRangeError:
             print('done')

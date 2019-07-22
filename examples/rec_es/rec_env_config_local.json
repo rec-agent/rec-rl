@@ -35,6 +35,6 @@
         "pv_item_num": 50,
         "local_mode": true,
         "batch_size": 100,
-        "tables": [["padded_pv_1k.data"],["rec_rl_data_small"]]
+        "tables": ["padded_pv_1k.data"]
     }
 }
