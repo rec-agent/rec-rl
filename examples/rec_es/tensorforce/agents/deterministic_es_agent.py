@@ -132,6 +132,7 @@ class DeterministicESAgent(Agent):
 
     def run_worker(self):
         # Start running on all workers.
+        #self.model定义在父类中
         self.model.update()
 
     def initialize_model(self):
