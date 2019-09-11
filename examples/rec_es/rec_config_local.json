@@ -16,7 +16,7 @@
         "l2_coeff": 0.005,
         "eval_prob": 0.5,
         "noise_stddev": 0.02,
-        "train_iters": 20
+        "train_iters": 100
     },
     "network_spec": [
         {
@@ -35,6 +35,6 @@
         "pv_item_num": 50,
         "local_mode": true,
         "batch_size": 100,
-        "tables": ["examples/rec_es/rec_rl_data_small"]
+        "tables": ["examples/rec_es/padded_pv_1k.data"]
     }
 }

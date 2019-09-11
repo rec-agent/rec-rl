@@ -1,0 +1,40 @@
+{
+    "agent": {
+        "type": "deterministic_es_agent",
+        "batch_size": 100,
+        "optimizer": {
+            "type": "adam",
+            "learning_rate": 0.01,
+            "lr_schedule":
+            {
+                "type": "linear_decay",
+                "max_decay_steps": 10000,
+                "final_value": 0.01
+            }
+        },
+        "max_episode_timesteps": 20,
+        "l2_coeff": 0.005,
+        "eval_prob": 0.5,
+        "noise_stddev": 0.02,
+        "train_iters": 10
+    },
+    "network_spec": [
+        {
+            "type": "linear",
+            "size": 3,
+            "bias": false,
+            "weights": [[1,1,1], [1,1,1], [1,0.83,0.83], [1,0.67,0.67], [1,0.5,0.5], [1,0.33,0.33], [1,0.17,0.17], [1,0.0,0.0]]
+        }
+    ],
+    "env": {
+        "shuffle": false,
+        "capacity": 10000,
+        "interactive": true,
+        "discount_base": 0.8,
+        "max_pageid": 7,
+        "pv_item_num": 50,
+        "local_mode": true,
+        "batch_size": 100,
+        "tables": ["padded_pv_1k.data"]
+    }
+}
